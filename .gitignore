@@ -1,2 +1,4 @@
 .build_release
 build
+*.solverstate
+*.caffemodel
