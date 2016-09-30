@@ -1,0 +1,524 @@
+name: "CaffeNet"
+layers {
+  layer {
+    name: "data"
+    type: "data"
+    source: "svhn-leveldb/svhn-train-leveldb"
+    batchsize: 128
+  }
+  top: "data"
+  top: "label"
+}
+layers {
+  layer {
+    name: "conv1"
+    type: "conv"
+    num_output: 128
+    kernelsize: 3
+    pad: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "data"
+  top: "conv1"
+}
+
+layers {
+  layer {
+    name: "split1"
+    type: "split"
+  }
+  bottom: "conv1"
+  top: "conv1_split0"
+  top: "conv1_split1"
+}
+layers {
+  layer {
+    name: "ip_svm1"
+    type: "innerproduct"
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+#    blobs_lr_policy: "power_inv"
+#    blobs_lr_policy: "power_inv"
+    blobs_lr: 0.001
+    blobs_lr: 0.002
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv1_split1"
+  top: "ip_svm1"
+}
+layers {
+  layer {
+  name: "loss"
+  type: "squaredhingeloss"
+  }
+  bottom: "ip_svm1"
+  bottom: "label"
+}
+
+layers {
+  layer {
+    name: "relu1"
+    type: "relu"
+  }
+  bottom: "conv1_split0"
+  top: "conv1_split0"
+}
+
+layers {
+  layer {
+    name: "conv2"
+    type: "conv"
+    num_output: 128
+    kernelsize: 3
+    pad: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv1_split0"
+  top: "conv2"
+}
+layers {
+  layer {
+    name: "relu_conv2"
+    type: "relu"
+  }
+  bottom: "conv2"
+  top: "conv2"
+}
+layers {
+  layer {
+    name: "cccp1"
+    type: "cccp"
+    num_output: 96
+    group: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv2"
+  top: "cccp1"
+}
+layers {
+  layer {
+    name: "relu_cccp1"
+    type: "relu"
+  }
+  bottom: "cccp1"
+  top: "cccp1"
+}
+#layers {
+#  layer {
+#    name: "pool1"
+#    type: "pool"
+#    pool: MAX
+#    kernelsize: 3
+#    stride: 2
+#  }
+#  bottom: "cccp1"
+#  top: "pool1"
+#}
+layers {
+  layer {
+    name: "treepool_max_ave_linear_1"
+    type: "treepool_max_ave_linear"
+    kernelsize: 3
+    stride: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.5
+    }
+    blobs_lr: 1.
+    weight_decay: 1.
+  }
+  bottom: "cccp1"
+  top: "treepool_max_ave_linear_1"
+}
+layers {
+  layer {
+    name: "drop3"
+    type: "dropout"
+    dropout_ratio: 0.5
+    mean_on_test: true
+    mean_on_train: false
+  }
+  bottom: "treepool_max_ave_linear_1"
+  top: "treepool_max_ave_linear_1"
+}
+layers {
+  layer {
+    name: "conv3"
+    type: "conv"
+    num_output: 320
+    kernelsize: 3
+    pad: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "treepool_max_ave_linear_1"
+  top: "conv3"
+}
+
+layers {
+  layer {
+    name: "split2"
+    type: "split"
+  }
+  bottom: "conv3"
+  top: "conv2_split0"
+  top: "conv2_split1"
+}
+layers {
+  layer {
+    name: "ip_svm2"
+    type: "innerproduct"
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+#    blobs_lr_policy: "power_inv"
+#    blobs_lr_policy: "power_inv"
+    blobs_lr: 0.001
+    blobs_lr: 0.002
+    weight_decay: 1
+    weight_decay: 0.
+  }
+  bottom: "conv2_split1"
+  top: "ip_svm2"
+}
+layers {
+  layer {
+  name: "loss"
+  type: "squaredhingeloss"
+  }
+  bottom: "ip_svm2"
+  bottom: "label"
+}
+
+layers {
+  layer {
+    name: "relu2"
+    type: "relu"
+  }
+  bottom: "conv2_split0"
+  top: "conv2_split0"
+}
+
+layers {
+  layer {
+    name: "conv4"
+    type: "conv"
+    num_output: 320
+    kernelsize: 3
+    pad: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv2_split0"
+  top: "conv4"
+}
+layers {
+  layer {
+    name: "relu_conv4"
+    type: "relu"
+  }
+  bottom: "conv4"
+  top: "conv4"
+}
+layers {
+  layer {
+    name: "cccp2"
+    type: "cccp"
+    num_output: 256
+    group: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv4"
+  top: "cccp2"
+}
+layers {
+  layer {
+    name: "relu_cccp2"
+    type: "relu"
+  }
+  bottom: "cccp2"
+  top: "cccp2"
+}
+#layers {
+#  layer {
+#    name: "pool2"
+#    type: "pool"
+#    pool: MAX
+#    kernelsize: 3
+#    stride: 2
+#  }
+#  bottom: "cccp2"
+#  top: "pool2"
+#}
+layers {
+  layer {
+    name: "treepool_max_ave_linear_2"
+    type: "treepool_max_ave_linear"
+    kernelsize: 3
+    stride: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.5
+    }
+    blobs_lr: 1.
+    weight_decay: 1.
+  }
+  bottom: "cccp2"
+  top: "treepool_max_ave_linear_2"
+}
+layers {
+  layer {
+    name: "drop6"
+    type: "dropout"
+    dropout_ratio: 0.5
+  }
+  bottom: "treepool_max_ave_linear_2"
+  top: "treepool_max_ave_linear_2"
+}
+layers {
+  layer {
+    name: "conv5"
+    type: "conv"
+    num_output: 384
+    kernelsize: 3
+    pad: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "treepool_max_ave_linear_2"
+  top: "conv5"
+}
+
+layers {
+  layer {
+    name: "split3"
+    type: "split"
+  }
+  bottom: "conv5"
+  top: "conv3_split0"
+  top: "conv3_split1"
+}
+layers {
+  layer {
+    name: "ip_svm3"
+    type: "innerproduct"
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+   # blobs_lr_policy: "power_inv"
+   # blobs_lr_policy: "power_inv"
+    blobs_lr: 0.001
+    blobs_lr: 0.002
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv3_split1"
+  top: "ip_svm3"
+}
+layers {
+  layer {
+  name: "loss"
+  type: "squaredhingeloss"
+  }
+  bottom: "ip_svm3"
+  bottom: "label"
+}
+
+layers {
+  layer {
+    name: "relu3"
+    type: "relu"
+  }
+  bottom: "conv3_split0"
+  top: "conv3_split0"
+}
+layers {
+  layer {
+    name: "conv6"
+    type: "conv"
+    num_output: 384
+    kernelsize: 3
+    pad: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv3_split0"
+  top: "conv6"
+}
+layers {
+  layer {
+    name: "relu_conv6"
+    type: "relu"
+  }
+  bottom: "conv6"
+  top: "conv6"
+}
+layers {
+  layer {
+    name: "cccp5"
+    type: "cccp"
+    num_output: 256
+    group: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 1.
+    blobs_lr: 2.
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "conv6"
+  top: "cccp5"
+}
+layers {
+  layer {
+    name: "relu_cccp5"
+    type: "relu"
+  }
+  bottom: "cccp5"
+  top: "cccp5"
+}
+layers {
+  layer {
+    name: "cccp6"
+    type: "cccp"
+    num_output: 10
+    group: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+    blobs_lr: 0.1
+    blobs_lr: 0.2
+    weight_decay: 1.
+    weight_decay: 0.
+  }
+  bottom: "cccp5"
+  top: "cccp6"
+}
+layers {
+  layer {
+    name: "pool3"
+    type: "pool"
+    pool: AVE
+    stride: 1
+    kernelsize: 8
+  }
+  bottom: "cccp6"
+  top: "pool3"
+}
+layers {
+  layer {
+    name: "loss"
+    type: "squaredhingeloss"
+  }
+  bottom: "pool3"
+  bottom: "label"
+}
