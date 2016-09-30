@@ -521,54 +521,6 @@ class SPPLayer : public Layer<Dtype> {
 
 
 //==========================================================
-// Max-Ave pooling with linear fusion
-//==========================================================
-template <typename Dtype>
-class TreepoolMaxAveLinearLayer : public Layer<Dtype> {
- public:
-  explicit TreepoolMaxAveLinearLayer(const LayerParameter& param)
-      : Layer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-
-  virtual inline const char* type() const { return "TreepoolMaxAveLinear"; }
-  virtual inline int ExactNumBottomBlobs() const { return 1; }
-  virtual inline int ExactNumTopBlobs() const { return 1; }
-
- protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-
-  int KSIZE_;
-  int STRIDE_;
-  int CHANNELS_;
-  int HEIGHT_;
-  int WIDTH_;
-  int POOLED_HEIGHT_;
-  int POOLED_WIDTH_;
-  int NUM_;
-  bool biasterm_;
-  shared_ptr<SyncedMemory> bias_multiplier2_;
-  Blob<Dtype> split_buffer1_;
-  Blob<Dtype> split_buffer2_;
-  Blob<Dtype> top_buffer1_;
-  Blob<Dtype> top_buffer2_;
-  Blob<Dtype> mat_buffer_;  
-  Blob<Dtype> poolsize_buffer_;
-  Blob<Dtype> col_buffer_;
-  Blob<Dtype> bottom_diff_buffer_;
-  int COUNT2_;
-};
-
-//==========================================================
 // Tree-based Max-Ave pooling 
 //==========================================================
 template <typename Dtype>
