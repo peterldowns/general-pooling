@@ -56,15 +56,73 @@ layer {
     }
   }
 }
+# Uncomment to use original pooling
+# layer {
+#   name: "pool1"
+#   type: "Pooling"
+#   bottom: "conv1"
+#   top: "pool1"
+#   pooling_param {
+#     pool: MAX
+#     kernel_size: 2
+#     stride: 2
+#   }
+# }
+# Uncomment to use gated pooling
+# layer {
+#   name: "pool1"
+#   top: "pool1"
+#   bottom: "conv1"
+#   type: "TreepoolMaxAve"
+#   param {
+#     lr_mult: 1
+#     decay_mult: 1
+#   }
+#   convolution_param {
+#     kernel_size: 3
+#     stride: 2
+#     weight_filler {
+#       type: "gaussian"
+#       std: 0.1
+#     }
+#   }
+# }
+# Uncomment to use 2-level Tree Pooling
+# layer {
+#   name: "pool1"
+#   top: "pool1"
+#   bottom: "conv1"
+#   type: "TreepoolKernel1L"
+#   param {
+#     lr_mult: 1
+#     decay_mult: 1
+#   }
+#   convolution_param {
+#     kernel_size: 3
+#     stride: 2
+#     weight_filler {
+#       type: "gaussian"
+#       std: 0.5
+#     }
+#   }
+# }
+# Uncomment to use 3-level Tree Pooling
 layer {
   name: "pool1"
-  type: "Pooling"
-  bottom: "conv1"
   top: "pool1"
-  pooling_param {
-    pool: MAX
-    kernel_size: 2
+  bottom: "conv1"
+  type: "TreepoolKernel2L"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  convolution_param {
+    kernel_size: 3
     stride: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.5
+    }
   }
 }
 layer {
@@ -90,15 +148,73 @@ layer {
     }
   }
 }
+# Uncomment to use original pooling
+# layer {
+#   name: "pool2"
+#   type: "Pooling"
+#   bottom: "conv1"
+#   top: "pool2"
+#   pooling_param {
+#     pool: MAX
+#     kernel_size: 2
+#     stride: 2
+#   }
+# }
+# Uncomment to use gated pooling
+# layer {
+#   name: "pool2"
+#   top: "pool2"
+#   bottom: "conv1"
+#   type: "TreepoolMaxAve"
+#   param {
+#     lr_mult: 1
+#     decay_mult: 1
+#   }
+#   convolution_param {
+#     kernel_size: 3
+#     stride: 2
+#     weight_filler {
+#       type: "gaussian"
+#       std: 0.1
+#     }
+#   }
+# }
+# Uncomment to use 2-level Tree Pooling
+# layer {
+#   name: "pool2"
+#   top: "pool2"
+#   bottom: "conv1"
+#   type: "TreepoolKernel1L"
+#   param {
+#     lr_mult: 1
+#     decay_mult: 1
+#   }
+#   convolution_param {
+#     kernel_size: 3
+#     stride: 2
+#     weight_filler {
+#       type: "gaussian"
+#       std: 0.5
+#     }
+#   }
+# }
+# Uncomment to use 3-level Tree Pooling
 layer {
   name: "pool2"
-  type: "Pooling"
-  bottom: "conv2"
   top: "pool2"
-  pooling_param {
-    pool: MAX
-    kernel_size: 2
+  bottom: "conv1"
+  type: "TreepoolKernel2L"
+  param {
+    lr_mult: 1
+    decay_mult: 1
+  }
+  convolution_param {
+    kernel_size: 3
     stride: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.5
+    }
   }
 }
 layer {
