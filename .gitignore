@@ -2,3 +2,4 @@
 build
 *.solverstate
 *.caffemodel
+*.log
