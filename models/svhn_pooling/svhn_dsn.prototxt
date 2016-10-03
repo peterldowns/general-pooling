@@ -1,4 +1,4 @@
-name: "CaffeNet"
+name: "SVHN Tree + Gated Max-Avg Pooling"
 layers {
   layer {
     name: "data"
@@ -10,9 +10,19 @@ layers {
   top: "label"
 }
 layers {
-  layer {
-    name: "conv1"
-    type: "conv"
+  type: "conv"
+  name: "conv1"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1.
+    decay_mult: 1
+  }
+  param {
+    lr_mult: 2.
+    decay_mul: 0.
+  }
+  convolution_param {
     num_output: 128
     kernelsize: 3
     pad: 1
@@ -24,23 +34,7 @@ layers {
       type: "constant"
       value: 0.
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "data"
-  top: "conv1"
-}
-
-layers {
-  layer {
-    name: "split1"
-    type: "split"
-  }
-  bottom: "conv1"
-  top: "conv1_split0"
-  top: "conv1_split1"
 }
 layers {
   layer {
