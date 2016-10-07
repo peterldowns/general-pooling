@@ -31,5 +31,7 @@ snapshot: 1000
 snapshot_prefix: "models/svhn_pooling/snapshots/svhn_dsn"
 # solver mode: CPU or GPU
 solver_mode: GPU
+# Solver type
+type: "SGD"
 # Display every 100 iterations
 display: 500
