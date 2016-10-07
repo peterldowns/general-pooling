@@ -1,30 +1,31 @@
 name: "SVHN Tree + Gated Max-Avg Pooling"
-layers {
-  layer {
-    name: "data"
-    type: "data"
-    source: "svhn-leveldb/svhn-train-leveldb"
-    batchsize: 128
-  }
+layer {
+  name: "data"
+  type: "data"
   top: "data"
   top: "label"
+  data_param {
+    source: "models/svhn_pooling/svhn-leveldb/svhn-train-leveldb"
+    batch_size: 128
+  }
 }
-layers {
-  type: "conv"
+# Convolution(3, 3, 128) #1
+layer {
+  type: "convolution"
   name: "conv1"
   bottom: "data"
   top: "conv1"
   param {
     lr_mult: 1.
-    decay_mult: 1
+    decay_mult: 1.
   }
   param {
     lr_mult: 2.
-    decay_mul: 0.
+    decay_mult: 0.
   }
   convolution_param {
     num_output: 128
-    kernelsize: 3
+    kernel_size: 3
     pad: 1
     weight_filler {
       type: "gaussian"
@@ -36,81 +37,63 @@ layers {
     }
   }
 }
-layers {
-  layer {
-    name: "ip_svm1"
-    type: "innerproduct"
-    num_output: 10
-    weight_filler {
-      type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
-    }
-#    blobs_lr_policy: "power_inv"
-#    blobs_lr_policy: "power_inv"
-    blobs_lr: 0.001
-    blobs_lr: 0.002
-    weight_decay: 1.
-    weight_decay: 0.
-  }
-  bottom: "conv1_split1"
-  top: "ip_svm1"
+layer {
+  type: "relu"
+  name: "conv1_relu"
+  bottom: "conv1"
+  top: "conv1"
 }
-layers {
-  layer {
-  name: "loss"
-  type: "squaredhingeloss"
-  }
-  bottom: "ip_svm1"
-  bottom: "label"
-}
-
-layers {
-  layer {
-    name: "relu1"
-    type: "relu"
-  }
-  bottom: "conv1_split0"
-  top: "conv1_split0"
-}
-
-layers {
-  layer {
-    name: "conv2"
-    type: "conv"
-    num_output: 128
-    kernelsize: 3
-    pad: 1
-    weight_filler {
-      type: "gaussian"
-      std: 0.05
-    }
-    bias_filler {
-      type: "constant"
-      value: 0.
-    }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
-  }
-  bottom: "conv1_split0"
+# Convolution(3, 3, 128) #2
+layer {
+  type: "convolution"
+  name: "conv2"
+  bottom: "conv1"
   top: "conv2"
-}
-layers {
-  layer {
-    name: "relu_conv2"
-    type: "relu"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
   }
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    pad: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0.
+    }
+  }
+}
+layer {
+  type: "relu"
+  name: "conv2_relu"
   bottom: "conv2"
   top: "conv2"
 }
-layers {
-  layer {
-    name: "cccp1"
-    type: "cccp"
+# CCCP(1, 1, 96) #1
+layer {
+  type: "convolution"
+  name: "cccp1_1"
+  bottom: "conv2"
+  top: "cccp1_1"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
+  }
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
     num_output: 96
+    kernel_size: 1
     group: 1
     weight_filler {
       type: "gaussian"
@@ -118,68 +101,96 @@ layers {
     }
     bias_filler {
       type: "constant"
-      value: 0.
+      value: 0
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "conv2"
-  top: "cccp1"
 }
-layers {
-  layer {
-    name: "relu_cccp1"
-    type: "relu"
+layer {
+  name: "cccp1_1_relu"
+  type: "relu"
+  bottom: "cccp1_1"
+  top: "cccp1_1"
+}
+layer {
+  name: "cccp1_2"
+  type: "convolution"
+  bottom: "cccp1_1"
+  top: "cccp1_2"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
   }
-  bottom: "cccp1"
-  top: "cccp1"
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
+    num_output: 96
+    kernel_size: 1
+    group: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
 }
-#layers {
-#  layer {
-#    name: "pool1"
-#    type: "pool"
-#    pool: MAX
-#    kernelsize: 3
-#    stride: 2
-#  }
-#  bottom: "cccp1"
-#  top: "pool1"
-#}
-layers {
-  layer {
-    name: "treepool_max_ave_linear_1"
-    type: "treepool_max_ave_linear"
-    kernelsize: 3
+layer {
+  name: "cccp1_2_relu"
+  type: "relu"
+  bottom: "cccp1_2"
+  top: "cccp1_2"
+}
+# 3x3 3 level tree pool #1
+# TODO: check out 2 level?
+layer {
+  name: "treepool1"
+  type: "TreepoolKernel2L"
+  top: "treepool1"
+  bottom: "cccp1_2"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
+  }
+  convolution_param {
+    kernel_size: 3
     stride: 2
     weight_filler {
       type: "gaussian"
       std: 0.5
     }
-    blobs_lr: 1.
-    weight_decay: 1.
   }
-  bottom: "cccp1"
-  top: "treepool_max_ave_linear_1"
 }
-layers {
-  layer {
-    name: "drop3"
-    type: "dropout"
+layer {
+  name: "dropout1"
+  type: "dropout"
+  bottom: "treepool1"
+  top: "treepool1"
+  dropout_param {
     dropout_ratio: 0.5
-    mean_on_test: true
-    mean_on_train: false
   }
-  bottom: "treepool_max_ave_linear_1"
-  top: "treepool_max_ave_linear_1"
 }
-layers {
-  layer {
-    name: "conv3"
-    type: "conv"
+# XXX
+# Convolution(3, 3, 320) #3
+layer {
+  type: "convolution"
+  name: "conv3"
+  bottom: "treepool1"
+  top: "conv3"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
+  }
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
     num_output: 320
-    kernelsize: 3
+    kernel_size: 3
     pad: 1
     weight_filler {
       type: "gaussian"
@@ -189,69 +200,31 @@ layers {
       type: "constant"
       value: 0.
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "treepool_max_ave_linear_1"
+}
+layer {
+  type: "relu"
+  name: "conv3_relu"
+  bottom: "conv3"
   top: "conv3"
 }
-
-layers {
-  layer {
-    name: "split2"
-    type: "split"
-  }
+# Convolution(3, 3, 320) #4
+layer {
+  type: "convolution"
+  name: "conv4"
   bottom: "conv3"
-  top: "conv2_split0"
-  top: "conv2_split1"
-}
-layers {
-  layer {
-    name: "ip_svm2"
-    type: "innerproduct"
-    num_output: 10
-    weight_filler {
-      type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
-    }
-#    blobs_lr_policy: "power_inv"
-#    blobs_lr_policy: "power_inv"
-    blobs_lr: 0.001
-    blobs_lr: 0.002
-    weight_decay: 1
-    weight_decay: 0.
+  top: "conv4"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
   }
-  bottom: "conv2_split1"
-  top: "ip_svm2"
-}
-layers {
-  layer {
-  name: "loss"
-  type: "squaredhingeloss"
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
   }
-  bottom: "ip_svm2"
-  bottom: "label"
-}
-
-layers {
-  layer {
-    name: "relu2"
-    type: "relu"
-  }
-  bottom: "conv2_split0"
-  top: "conv2_split0"
-}
-
-layers {
-  layer {
-    name: "conv4"
-    type: "conv"
+  convolution_param {
     num_output: 320
-    kernelsize: 3
+    kernel_size: 3
     pad: 1
     weight_filler {
       type: "gaussian"
@@ -261,27 +234,31 @@ layers {
       type: "constant"
       value: 0.
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "conv2_split0"
-  top: "conv4"
 }
-layers {
-  layer {
-    name: "relu_conv4"
-    type: "relu"
-  }
+layer {
+  type: "relu"
+  name: "conv4_relu"
   bottom: "conv4"
   top: "conv4"
 }
-layers {
-  layer {
-    name: "cccp2"
-    type: "cccp"
+# CCCP(1, 1, 256) #2
+layer {
+  type: "convolution"
+  name: "cccp2_1"
+  bottom: "conv4"
+  top: "cccp2_1"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
+  }
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
     num_output: 256
+    kernel_size: 1
     group: 1
     weight_filler {
       type: "gaussian"
@@ -289,66 +266,95 @@ layers {
     }
     bias_filler {
       type: "constant"
-      value: 0.
+      value: 0
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "conv4"
-  top: "cccp2"
 }
-layers {
-  layer {
-    name: "relu_cccp2"
-    type: "relu"
+layer {
+  name: "cccp2_1_relu"
+  type: "relu"
+  bottom: "cccp2_1"
+  top: "cccp2_1"
+}
+layer {
+  name: "cccp2_2"
+  type: "convolution"
+  bottom: "cccp2_1"
+  top: "cccp2_2"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
   }
-  bottom: "cccp2"
-  top: "cccp2"
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
+    group: 1
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
 }
-#layers {
-#  layer {
-#    name: "pool2"
-#    type: "pool"
-#    pool: MAX
-#    kernelsize: 3
-#    stride: 2
-#  }
-#  bottom: "cccp2"
-#  top: "pool2"
-#}
-layers {
-  layer {
-    name: "treepool_max_ave_linear_2"
-    type: "treepool_max_ave_linear"
-    kernelsize: 3
+layer {
+  name: "cccp2_2_relu"
+  type: "relu"
+  bottom: "cccp2_2"
+  top: "cccp2_2"
+}
+# 3x3 Gated Max Average Pool
+layer {
+  name: "gatedpool1"
+  top: "gatedpool1"
+  bottom: "cccp2_2"
+  type: "TreepoolMaxAve"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
+  }
+  convolution_param {
+    kernel_size: 3
     stride: 2
     weight_filler {
       type: "gaussian"
-      std: 0.5
+      std: 0.1
     }
-    blobs_lr: 1.
-    weight_decay: 1.
   }
-  bottom: "cccp2"
-  top: "treepool_max_ave_linear_2"
 }
-layers {
-  layer {
-    name: "drop6"
-    type: "dropout"
+layer {
+  name: "dropout2"
+  type: "dropout"
+  bottom: "gatedpool1"
+  top: "gatedpool1"
+  dropout_param {
     dropout_ratio: 0.5
   }
-  bottom: "treepool_max_ave_linear_2"
-  top: "treepool_max_ave_linear_2"
 }
-layers {
-  layer {
-    name: "conv5"
-    type: "conv"
+# YYY
+# Convolution(3, 3, 384) #5
+layer {
+  type: "convolution"
+  name: "conv5"
+  bottom: "gatedpool1"
+  top: "conv5"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
+  }
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
     num_output: 384
-    kernelsize: 3
+    kernel_size: 3
     pad: 1
     weight_filler {
       type: "gaussian"
@@ -358,68 +364,31 @@ layers {
       type: "constant"
       value: 0.
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "treepool_max_ave_linear_2"
+}
+layer {
+  type: "relu"
+  name: "conv5_relu"
+  bottom: "conv5"
   top: "conv5"
 }
-
-layers {
-  layer {
-    name: "split3"
-    type: "split"
-  }
+# Convolution(3, 3, 384) #6
+layer {
+  type: "convolution"
+  name: "conv6"
   bottom: "conv5"
-  top: "conv3_split0"
-  top: "conv3_split1"
-}
-layers {
-  layer {
-    name: "ip_svm3"
-    type: "innerproduct"
-    num_output: 10
-    weight_filler {
-      type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
-    }
-   # blobs_lr_policy: "power_inv"
-   # blobs_lr_policy: "power_inv"
-    blobs_lr: 0.001
-    blobs_lr: 0.002
-    weight_decay: 1.
-    weight_decay: 0.
+  top: "conv6"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
   }
-  bottom: "conv3_split1"
-  top: "ip_svm3"
-}
-layers {
-  layer {
-  name: "loss"
-  type: "squaredhingeloss"
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
   }
-  bottom: "ip_svm3"
-  bottom: "label"
-}
-
-layers {
-  layer {
-    name: "relu3"
-    type: "relu"
-  }
-  bottom: "conv3_split0"
-  top: "conv3_split0"
-}
-layers {
-  layer {
-    name: "conv6"
-    type: "conv"
+  convolution_param {
     num_output: 384
-    kernelsize: 3
+    kernel_size: 3
     pad: 1
     weight_filler {
       type: "gaussian"
@@ -429,27 +398,31 @@ layers {
       type: "constant"
       value: 0.
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "conv3_split0"
-  top: "conv6"
 }
-layers {
-  layer {
-    name: "relu_conv6"
-    type: "relu"
-  }
+layer {
+  type: "relu"
+  name: "conv6_relu"
   bottom: "conv6"
   top: "conv6"
 }
-layers {
-  layer {
-    name: "cccp5"
-    type: "cccp"
+# CCCP(1, 1, 256) #3
+layer {
+  type: "convolution"
+  name: "cccp3_1"
+  bottom: "conv6"
+  top: "cccp3_1"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
+  }
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
     num_output: 256
+    kernel_size: 1
     group: 1
     weight_filler {
       type: "gaussian"
@@ -457,29 +430,32 @@ layers {
     }
     bias_filler {
       type: "constant"
-      value: 0.
+      value: 0
     }
-    blobs_lr: 1.
-    blobs_lr: 2.
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "conv6"
-  top: "cccp5"
 }
-layers {
-  layer {
-    name: "relu_cccp5"
-    type: "relu"
+layer {
+  name: "cccp3_1_relu"
+  type: "relu"
+  bottom: "cccp3_1"
+  top: "cccp3_1"
+}
+layer {
+  name: "cccp3_2"
+  type: "convolution"
+  bottom: "cccp3_1"
+  top: "cccp3_2"
+  param {
+    lr_mult: 1.
+    decay_mult: 1.
   }
-  bottom: "cccp5"
-  top: "cccp5"
-}
-layers {
-  layer {
-    name: "cccp6"
-    type: "cccp"
-    num_output: 10
+  param {
+    lr_mult: 2.
+    decay_mult: 0.
+  }
+  convolution_param {
+    num_output: 256
+    kernel_size: 1
     group: 1
     weight_filler {
       type: "gaussian"
@@ -487,32 +463,30 @@ layers {
     }
     bias_filler {
       type: "constant"
-      value: 0.
+      value: 0
     }
-    blobs_lr: 0.1
-    blobs_lr: 0.2
-    weight_decay: 1.
-    weight_decay: 0.
   }
-  bottom: "cccp5"
-  top: "cccp6"
 }
-layers {
-  layer {
-    name: "pool3"
-    type: "pool"
-    pool: AVE
-    stride: 1
-    kernelsize: 8
-  }
-  bottom: "cccp6"
-  top: "pool3"
+layer {
+  name: "cccp3_2_relu"
+  type: "relu"
+  bottom: "cccp3_2"
+  top: "cccp3_2"
 }
-layers {
-  layer {
-    name: "loss"
-    type: "squaredhingeloss"
-  }
-  bottom: "pool3"
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "cccp3_2"
   bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "cccp3_2"
+  bottom: "label"
+  top: "loss"
 }

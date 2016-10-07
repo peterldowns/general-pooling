@@ -3,3 +3,6 @@ build
 *.solverstate
 *.caffemodel
 *.log
+distribute
+*.pyc
+python/caffe/*
